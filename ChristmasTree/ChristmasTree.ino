@@ -11,8 +11,8 @@ Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, RGB_PIN, NEO_GRB + NEO_K
 
 int pulseStep = 1;
 int pulseWait = 10;
-int pulseMax = 200;
-int pulseMin = 20;
+int pulseMax = 100;
+int pulseMin = 1;
 
 String soundBlue = "Blue";
 String soundRed = "red";
@@ -28,8 +28,18 @@ String soundMindre = "mindre";
 String soundDisco = "disco";
 String soundMaks = "maks";
 String soundMax = "Max";
+String soundMinst = "minst";
 String soundOpp = "opp";
 String soundNed = "ned";
+String soundRolig = "rolig";
+String sound1 = "1";
+String sound2 = "2";
+String sound3 = "3";
+String sound4 = "4";
+String sound5 = "5";
+String soundEvig ="alltid";
+String soundRegnbue = "regnbue";
+String soundKarljohansvern = "Karljohansvern";
 
 typedef struct rgbColors
 {
@@ -65,6 +75,8 @@ void loop()
             lightOnNormal();
         else if (message.indexOf(soundMaks) >= 0 || message.indexOf(soundMax) >= 0 )
             lightOnMax();
+        else if (message.indexOf(soundMinst) >= 0)
+            light(1);      
         else if (message.indexOf(soundAv) >= 0)
             lightOff();
         else if (message.indexOf(soundMer) >= 0)
@@ -83,9 +95,27 @@ void loop()
             redOn();
         else if (message.indexOf(soundBlue) >= 0)
             blueOn();
+        else if (message.indexOf(soundKarljohansvern) >= 0)
+            kjvShow(50);
+        else if (message.indexOf(soundRegnbue) >= 0)
+            regnbue(20);
+        else if (message.indexOf(soundRolig) >= 0)
+        {
+            if (message.indexOf(sound1) >= 0)
+                rolig1();
+            else if (message.indexOf(sound1) >= 0)
+                rolig2();         
+            else if (message.indexOf(soundEvig) >= 0)
+                rolig3();    
+            else if (message.indexOf(sound1) >= 0)
+                rolig4();       
+            else if (message.indexOf(sound1) >= 0)
+                rolig5();                                
+        }
+                  
         else if (isNumerical(message))
             lightNumber(message);
-   }
+    }
 }
 
 bool isNumerical(String message)
@@ -177,6 +207,126 @@ void discoTime()
     }
 }
 
+void rolig1()
+{
+    lightUp();
+    lightDown();
+    lightUp();
+    lightDown();
+    lightUp();
+    lightDown();
+    lightUp();
+    lightDown();
+    lightUp();
+    lightDown();
+    lightUp();
+    lightDown();
+    
+}
+
+void rolig2()
+{
+    int wait = 10;
+    
+    lightUp();
+    regnbue(wait);
+    lightDown();
+    regnbue(wait);
+    lightUp();
+    regnbue(wait);
+    lightDown();
+    regnbue(wait);
+    lightUp();
+    regnbue(wait);
+    lightDown();
+    regnbue(wait);
+    lightUp();
+    regnbue(wait);
+    lightDown();
+    regnbue(wait);
+    lightUp();
+    regnbue(wait);
+    lightDown();
+    regnbue(wait);
+    lightUp();
+    regnbue(wait);
+    lightDown();
+    regnbue(wait);
+}
+
+void rolig3()
+{
+    while(1)
+    {
+        rolig2();
+    }
+}
+
+void rolig4()
+{
+    
+}
+
+void rolig5()
+{
+    
+}
+
+void regnbue(uint8_t wait)
+{
+    uint16_t i, j;
+
+    for(j=0; j<256*5; j++) // 5 cycles of all colors on wheel
+    { 
+        for(i=0; i< pixels.numPixels(); i++) 
+        {
+          pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+        }
+    pixels.show();
+    delay(wait);
+    light(20);
+    }
+}
+
+void kjvShow(uint8_t wait)
+{
+    theaterChaseRainbow(wait);
+}
+
+//Theatre-style crawling lights with rainbow effect
+void theaterChaseRainbow(uint8_t wait) {
+  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
+    for (int q=0; q < 3; q++) {
+      for (uint16_t i=0; i < pixels.numPixels(); i=i+3) {
+        pixels.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
+      }
+      pixels.show();
+
+      delay(wait);
+      light(lightRand());
+
+      for (uint16_t i=0; i < pixels.numPixels(); i=i+3) {
+        pixels.setPixelColor(i+q, 0);        //turn every third pixel off
+      }
+    }
+  }
+}
+
+// Input a value 0 to 255 to get a color value.
+// The colours are a transition r - g - b - back to r.
+uint32_t Wheel(byte WheelPos) {
+  WheelPos = 255 - WheelPos;
+  if(WheelPos < 85) {
+    return pixels.Color(255 - WheelPos * 3, 0, WheelPos * 3);
+  }
+  if(WheelPos < 170) {
+    WheelPos -= 85;
+    return pixels.Color(0, WheelPos * 3, 255 - WheelPos * 3);
+  }
+  WheelPos -= 170;
+  return pixels.Color(WheelPos * 3, 255 - WheelPos * 3, 0);
+}
+
 void lightNumber(String message)
 {
     Serial.println("Number detected");
@@ -214,6 +364,17 @@ void blueOn()
 void colorOff()
 {
     setColor(rgbOff);
+}
+
+int randPixel()
+{
+    return random(0, NUMPIXELS);
+}
+
+void OneColor(int pixel, rgbColor& color)
+{
+    pixels.setPixelColor(pixel, pixels.Color(color.r, color.g, color.b)); // Moderately bright green color.
+    pixels.show(); // This sends the updated pixel color to the hardware.
 }
 
 void setColor(rgbColor& color)

@@ -3,8 +3,9 @@
   #include <avr/power.h>
 #endif
 
-#define WHITE_PIN 3
-#define RGB_PIN 4
+#define PIR_PIN 2
+#define WHITE_PIN 4
+#define RGB_PIN 5
 #define NUMPIXELS 60
 
 Adafruit_NeoPixel pixels = Adafruit_NeoPixel(NUMPIXELS, RGB_PIN, NEO_GRB + NEO_KHZ800);
@@ -14,32 +15,38 @@ int pulseWait = 10;
 int pulseMax = 100;
 int pulseMin = 1;
 
-String soundBlue = "Blue";
-String soundRed = "red";
-String soundGreen = "Green";
-String soundGronn = "grønn"; 
-String soundPa = "på";
-String soundJul = "jul";
-String soundAv = "av";
-String soundDim = "dim";
-String soundFade = "fade";
-String soundMer = "mer";
-String soundMindre = "mindre";
-String soundDisco = "disco";
-String soundMaks = "maks";
-String soundMax = "Max";
-String soundMinst = "minst";
-String soundOpp = "opp";
-String soundNed = "ned";
-String soundRolig = "rolig";
-String sound1 = "1";
-String sound2 = "2";
-String sound3 = "3";
-String sound4 = "4";
-String sound5 = "5";
-String soundEvig ="alltid";
-String soundRegnbue = "regnbue";
-String soundKarljohansvern = "Karljohansvern";
+const int waitForAction = 60000;
+const int waitForMotion = 10000;
+long timeLastAction = 0;
+bool motionDisabled = false;
+unsigned long timeSinceMotion;
+
+const String soundBlue = "Blue";
+const String soundRed = "red";
+const String soundGreen = "Green";
+const String soundGronn = "grønn"; 
+const String soundPa = "på";
+const String soundJul = "jul";
+const String soundAv = "av";
+const String soundDim = "dim";
+const String soundFade = "fade";
+const String soundMer = "mer";
+const String soundMindre = "mindre";
+const String soundDisco = "disco";
+const String soundMaks = "maks";
+const String soundMax = "Max";
+const String soundMinst = "minst";
+const String soundOpp = "opp";
+const String soundNed = "ned";
+const String soundRolig = "rolig";
+const String sound1 = "1";
+const String sound2 = "2";
+const String sound3 = "3";
+const String sound4 = "4";
+const String sound5 = "5";
+const String soundEvig ="alltid";
+const String soundRegnbue = "regnbue";
+const String soundKarljohansvern = "Karljohansvern";
 
 typedef struct rgbColors
 {
@@ -54,11 +61,14 @@ void setup()
 {
     Serial.begin(9600);
     pinMode(WHITE_PIN, OUTPUT);
-    Serial.println("Let's try again.");
-    
+    pinMode(PIR_PIN, INPUT_PULLUP);
     pixels.begin(); // This initializes the NeoPixel library.
     initColors();
     colorOff(); 
+    attachInterrupt(digitalPinToInterrupt(PIR_PIN), motionDetected, FALLING);
+        
+    Serial.println("Rockin' around the christmas tree.");
+    lightOnNormal();
 }
 
 void loop() 
@@ -112,10 +122,46 @@ void loop()
             else if (message.indexOf(sound1) >= 0)
                 rolig5();                                
         }
-                  
+                          
         else if (isNumerical(message))
             lightNumber(message);
     }
+
+    checkReadyForAction();
+    checkMotionSensor();
+}
+
+void checkReadyForAction()
+{
+    if ((millis() - timeLastAction) > waitForAction)
+    {
+        timeLastAction = millis();
+        randColorOn();
+        Serial.print("New color ");
+        Serial.println(millis());
+    }
+}
+
+void motionDetected()
+{
+    if (motionDisabled == true)
+    {
+        Serial.print("Motion not yet enabled ");
+        Serial.println((millis() - timeSinceMotion));
+        return;
+    }
+    
+    motionDisabled = true;
+    Serial.println("Motion detected");
+    randColorOn();
+    lightOff();
+    delay(200);
+    lightOnMax();
+
+    delay(4000);
+    
+    lightOnNormal();   
+    timeSinceMotion = millis();
 }
 
 bool isNumerical(String message)
@@ -135,6 +181,17 @@ bool isNumerical(String message)
         return false;
 }
 
+
+
+void checkMotionSensor()
+{
+    if ( (millis() - timeSinceMotion) > waitForMotion )
+    {
+        //Serial.println("Ready for new motion");
+        motionDisabled = false;
+    }     
+}
+
 int lightIntensity = 0;
 
 void light(int intensity)
@@ -148,14 +205,15 @@ void light(int intensity)
     Serial.print(" "); Serial.print(intensityPercent);Serial.println("%");
 }
 
-void lightOnNormal() { light(100); }
+void lightOnNormal() { light(150); }
 
 void lightOnMax() { light(255); }
+
+int lightRand() { return random(1, 255); }
 
 void lightOff() 
 { 
     light(0);
-    colorOff();   
 }
 
 void lightMore()
@@ -194,7 +252,7 @@ void lightDown()
     }
 }
 
-int lightRand() { return random(1,255); }
+
 
 void discoTime()
 {
@@ -209,49 +267,26 @@ void discoTime()
 
 void rolig1()
 {
-    lightUp();
-    lightDown();
-    lightUp();
-    lightDown();
-    lightUp();
-    lightDown();
-    lightUp();
-    lightDown();
-    lightUp();
-    lightDown();
-    lightUp();
-    lightDown();
-    
+    int turns = 10;
+
+    for (byte i = 0; i < turns; i++)
+    {
+        lightUp();
+        lightDown();
+    }    
 }
 
 void rolig2()
 {
+    int turns = 10;
     int wait = 10;
     
-    lightUp();
-    regnbue(wait);
-    lightDown();
-    regnbue(wait);
-    lightUp();
-    regnbue(wait);
-    lightDown();
-    regnbue(wait);
-    lightUp();
-    regnbue(wait);
-    lightDown();
-    regnbue(wait);
-    lightUp();
-    regnbue(wait);
-    lightDown();
-    regnbue(wait);
-    lightUp();
-    regnbue(wait);
-    lightDown();
-    regnbue(wait);
-    lightUp();
-    regnbue(wait);
-    lightDown();
-    regnbue(wait);
+    for (byte i = 0; i < turns; i++)
+    {
+        lightUp();
+        regnbue(wait);
+        lightDown();
+    }
 }
 
 void rolig3()
@@ -280,11 +315,12 @@ void regnbue(uint8_t wait)
     { 
         for(i=0; i< pixels.numPixels(); i++) 
         {
-          pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
+            pixels.setPixelColor(i, Wheel(((i * 256 / pixels.numPixels()) + j) & 255));
         }
-    pixels.show();
-    delay(wait);
-    light(20);
+    
+        pixels.show();
+        delay(wait);
+        light(20);
     }
 }
 
@@ -361,17 +397,33 @@ void blueOn()
     setColor(rgbBlue);
 }
 
+void randColorOn()
+{
+    rgbColor color;
+    randRgb(color);
+    setColor(color);
+}
+
 void colorOff()
 {
     setColor(rgbOff);
 }
 
-int randPixel()
+char randPixel()
 {
     return random(0, NUMPIXELS);
 }
 
-void OneColor(int pixel, rgbColor& color)
+char randColor() { return random(0, 255); }
+
+void randRgb(rgbColor& inRgb)
+{
+    inRgb.r = randColor();
+    inRgb.g = randColor();
+    inRgb.b = randColor();
+}
+
+void oneColor(int pixel, rgbColor& color)
 {
     pixels.setPixelColor(pixel, pixels.Color(color.r, color.g, color.b)); // Moderately bright green color.
     pixels.show(); // This sends the updated pixel color to the hardware.
@@ -405,4 +457,3 @@ void initColors()
     rgbBlue.g = 0;
     rgbBlue.b = 255;   
 }
-

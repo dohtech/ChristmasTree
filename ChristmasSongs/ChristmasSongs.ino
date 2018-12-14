@@ -2,8 +2,7 @@
 
 #define BUZZER_PIN 8
 #define SPEAKER_PIN 7
-#define RGB_PIN 5
-#define NUMPIXELS 60
+#define PIR_PIN 2
 
 const String song1 = "song1";
 const String song2 = "song2";
@@ -11,7 +10,7 @@ const String song3 = "song3";
 const String mario1 = "mario";
 const String mario2 = "underworld";
 
-int marioSong[] = {
+const int marioSong[] = {
   NOTE_E7, NOTE_E7, 0, NOTE_E7,
   0, NOTE_C7, NOTE_E7, 0,
   NOTE_G7, 0, 0,  0,
@@ -38,7 +37,7 @@ int marioSong[] = {
   NOTE_D7, NOTE_B6, 0, 0
 };
 //Mario main them tempo
-int marioTempo[] = {
+const int marioTempo[] = {
   12, 12, 12, 12,
   12, 12, 12, 12,
   12, 12, 12, 12,
@@ -65,7 +64,7 @@ int marioTempo[] = {
   12, 12, 12, 12,
 };
 //Underworld melody
-int underworldSong[] = {
+const int underworldSong[] = {
   NOTE_C4, NOTE_C5, NOTE_A3, NOTE_A4,
   NOTE_AS3, NOTE_AS4, 0,
   0,
@@ -87,7 +86,7 @@ int underworldSong[] = {
   0, 0, 0
 };
 //Underwolrd tempo
-int underworldTempo[] = {
+const int underworldTempo[] = {
   12, 12, 12, 12,
   12, 12, 6,
   3,
@@ -109,7 +108,7 @@ int underworldTempo[] = {
   3, 3, 3
 };
 
-int jingleBells[] = {
+const int jingleBells[] = {
   NOTE_E5, NOTE_E5, NOTE_E5,
   NOTE_E5, NOTE_E5, NOTE_E5,
   NOTE_E5, NOTE_G5, NOTE_C5, NOTE_D5,
@@ -133,7 +132,7 @@ int tempo[] = {
 
 // We wish you a merry Christmas
 
-int wish_melody[] = {
+const int wish_melody[] = {
   NOTE_B3, 
   NOTE_F4, NOTE_F4, NOTE_G4, NOTE_F4, NOTE_E4,
   NOTE_D4, NOTE_D4, NOTE_D4,
@@ -145,7 +144,7 @@ int wish_melody[] = {
   NOTE_F4
 };
 
-int wish_tempo[] = {
+const int wish_tempo[] = {
   4,
   4, 8, 8, 8, 8,
   4, 4, 4,
@@ -159,7 +158,7 @@ int wish_tempo[] = {
 
 // Santa Claus is coming to town
 
-int santa_melody[] = {
+const int santa_melody[] = {
   NOTE_G4,
   NOTE_E4, NOTE_F4, NOTE_G4, NOTE_G4, NOTE_G4,
   NOTE_A4, NOTE_B4, NOTE_C5, NOTE_C5, NOTE_C5,
@@ -170,7 +169,7 @@ int santa_melody[] = {
   NOTE_C4
 };
 
-int santa_tempo[] = {
+const int santa_tempo[] = {
   8,
   8, 8, 4, 4, 4,
   8, 8, 4, 4, 4,
@@ -182,14 +181,22 @@ int santa_tempo[] = {
 };
 
 int melodyPin;
+
+bool motionDisabled = false;
+unsigned long timeWhenMotion = 0;
+const unsigned long waitForMotion = 60000;
+
 void setup() 
 {
     Serial.begin(9600);
     pinMode(BUZZER_PIN, OUTPUT);
     pinMode(SPEAKER_PIN, OUTPUT);
+    pinMode(PIR_PIN, INPUT_PULLUP); 
 
     melodyPin = SPEAKER_PIN;        
     Serial.println("Rockin' around the christmas tree.");
+
+    //attachInterrupt(digitalPinToInterrupt(PIR_PIN), intMotionDetected, FALLING);
 }
 
 void loop() 
@@ -213,6 +220,43 @@ void loop()
         else if (message.indexOf(mario2) >= 0)
             playSong(5);
     }
+
+    if (digitalRead(PIR_PIN) == LOW)
+        intMotionDetected();
+    
+    checkMotionSensor();
+}
+
+void checkMotionSensor()
+{
+    long timeWaited = (millis() - timeWhenMotion);    
+    
+    if ( timeWaited > waitForMotion )
+    {
+        //Serial.println("Ready for new motion");
+        motionDisabled = false;
+    }     
+}
+
+void intMotionDetected()
+{
+    if (motionDisabled == true)
+    {
+        long timeWaited = (millis() - timeWhenMotion);    
+        
+        Serial.print("Motion not yet enabled. Count down ");
+        Serial.println(waitForMotion - timeWaited);
+        return;
+    }
+    
+    motionDisabled = true;
+
+    int randSong = random(1, 5);
+    playSong(randSong);
+    Serial.print("Motion detected. Play song:");
+    Serial.println(randSong);
+    
+    timeWhenMotion = millis();
 }
 
 void playSong(int songNumber)

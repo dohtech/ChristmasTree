@@ -252,9 +252,10 @@ void intMotionDetected()
     motionDisabled = true;
 
     int randSong = random(1, 5);
-    playSong(randSong);
     Serial.print("Motion detected. Play song:");
     Serial.println(randSong);
+    playSong(randSong);
+
     
     timeWhenMotion = millis();
 }

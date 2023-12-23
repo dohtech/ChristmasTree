@@ -1,4 +1,10 @@
-#include <Adafruit_NeoPixel.h>
+#ifdef ARDUINO
+    #include <Adafruit_NeoPixel.h>
+#else
+  #include <../libraries/Adafruit_NeoPixel/Adafruit_NeoPixel.h>
+  #include "C:/Users/jorge/AppData/Local/Arduino15/packages/arduino/hardware/avr/1.8.6/cores/Arduino.h"
+#endif
+
 #ifdef __AVR__
   #include <avr/power.h>
 #endif
@@ -19,7 +25,7 @@ typedef struct rgbColors
 
 rgbColor rgbOff, rgbRed, rgbGreen, rgbBlue;
 
-#define INIT_WAIT_PERIOD 500
+#define INIT_WAIT_PERIOD 200
 
 void setup() {
     Serial.begin(9600);
@@ -31,10 +37,10 @@ void setup() {
     initColors();
     colorOff();
 
-    light(255);
+    analogWrite(WHITE_PIN, 255);
     Serial.println("Light");
     delay(INIT_WAIT_PERIOD);
-    light(0);
+    analogWrite(WHITE_PIN, 0);
     colorOff();
 
     redOn();
@@ -67,12 +73,18 @@ bool isMotionDetected()
 void loop() {
   // put your main code here, to run repeatedly:
 
-  theaterChaseRainbow(1000);
+  // for (int i = 0; i < NUMPIXELS; i++)
+  // {
+  //   pixels.setPixelColor(i, 50);
+  //   delay(100);
+  // }
+
+  
+  rainbowSlow();
 
   // int motion = isMotionDetected();
 
-  // if (isMotionDetected())
-  // {
+  // if (isMotionDetected()){}
   //   redOn();
   // }
   // else
@@ -131,8 +143,13 @@ int lightRand() { return random(1,255); }
 
 int lightIntensity = 0;
 
-void light(int intensity)
+int light(int intensity)
 {
+    if (intensity > 200)
+      intensity = 200;
+    if (intensity < 5)
+      intensity = 5;
+
     lightIntensity = intensity;
 
     int intensityPercent = (100 * intensity) / 255;
@@ -140,6 +157,8 @@ void light(int intensity)
     analogWrite(WHITE_PIN, intensity);
     //Serial.print("Light intensity: "); Serial.print(lightIntensity);
     //Serial.print(" "); Serial.print(intensityPercent);Serial.println("%");
+
+    return intensity;
 }
 
 // Input a value 0 to 255 to get a color value.
@@ -180,6 +199,38 @@ void theaterChaseRainbow(uint8_t wait) {
       }
     }
   }
+}
+
+bool lightIncrease = true;
+void changeLightDirection()
+{
+  lightIncrease = !lightIncrease;
+}
+
+//Theatre-style crawling lights with rainbow effect
+void rainbowSlow() 
+{
+  for (int j=0; j < 256; j++) {     // cycle all 256 colors in the wheel
+    delay(50);
+    for (int q=0; q < 3; q++) {
+      for (uint16_t i=0; i < pixels.numPixels(); i=i+3) {
+        pixels.setPixelColor(i+q, Wheel( (i+j) % 255));    //turn every third pixel on
+      }
+      pixels.show();
+    }
+    
+    if (lightIncrease)
+      lightDimmer++;
+    else
+      lightDimmer--;
+    int realIntensity = light(lightDimmer);
+    Serial.println(realIntensity);
+  }
+
+  Serial.print("Light increase :");
+  Serial.println(lightIncrease);
+
+  changeLightDirection();
 }
 
 void setColor(rgbColor& color)
